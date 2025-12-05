@@ -19,28 +19,16 @@ public class FileController {
 
     private final MinioService minioService;
 
-    /**
-     * Эндпоинт для загрузки TXT файлов
-     * POST /api/files/upload/txt
-     * 
-     * Принимает только файлы типа text/plain с расширением .txt
-     * 
-     * @param file - TXT файл для загрузки
-     * @return ResponseEntity с результатом загрузки
-     */
     @PostMapping("/upload/txt")
     public ResponseEntity<?> uploadTxtFile(@RequestParam("file") MultipartFile file) {
         try {
-            // Проверка, что файл не пустой
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(createErrorResponse("Файл не может быть пустым"));
             }
 
-            // Загрузка файла через сервис
             String fileName = minioService.uploadTxtFile(file);
 
-            // Формирование успешного ответа
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "TXT файл успешно загружен");
@@ -54,41 +42,27 @@ public class FileController {
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
-            // Ошибка валидации типа файла
             log.warn("Неверный тип файла: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(createErrorResponse(e.getMessage()));
 
         } catch (Exception e) {
-            // Общая ошибка загрузки
             log.error("Ошибка при загрузке TXT файла", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Ошибка при загрузке файла: " + e.getMessage()));
         }
     }
 
-    /**
-     * Эндпоинт для загрузки PNG файлов
-     * POST /api/files/upload/png
-     * 
-     * Принимает только файлы типа image/png с расширением .png
-     * 
-     * @param file - PNG файл для загрузки
-     * @return ResponseEntity с результатом загрузки
-     */
     @PostMapping("/upload/png")
     public ResponseEntity<?> uploadPngFile(@RequestParam("file") MultipartFile file) {
         try {
-            // Проверка, что файл не пустой
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(createErrorResponse("Файл не может быть пустым"));
             }
 
-            // Загрузка файла через сервис
             String fileName = minioService.uploadPngFile(file);
 
-            // Формирование успешного ответа
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "PNG файл успешно загружен");
@@ -102,22 +76,51 @@ public class FileController {
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
-            // Ошибка валидации типа файла
             log.warn("Неверный тип файла: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(createErrorResponse(e.getMessage()));
 
         } catch (Exception e) {
-            // Общая ошибка загрузки
             log.error("Ошибка при загрузке PNG файла", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Ошибка при загрузке файла: " + e.getMessage()));
         }
     }
 
-    /**
-     * Вспомогательный метод для создания ответа об ошибке
-     */
+    @PostMapping("/upload/json")
+    public ResponseEntity<?> uploadJsonFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("Файл не может быть пустым"));
+            }
+
+            String fileName = minioService.uploadJsonFile(file);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "JSON файл успешно загружен");
+            response.put("fileName", fileName);
+            response.put("originalFileName", file.getOriginalFilename());
+            response.put("fileSize", file.getSize());
+            response.put("contentType", file.getContentType());
+
+            log.info("JSON файл загружен: {} -> {}", file.getOriginalFilename(), fileName);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Неверный тип файла: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(createErrorResponse(e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("Ошибка при загрузке JSON файла", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Ошибка при загрузке файла: " + e.getMessage()));
+        }
+    }
+
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);

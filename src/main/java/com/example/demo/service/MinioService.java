@@ -23,30 +23,22 @@ public class MinioService {
     @Value("${minio.bucket-name}")
     private String bucketName;
 
-    /**
-     * Загрузка TXT файла в MinIO
-     */
     public String uploadTxtFile(MultipartFile file) {
         try {
-            // Проверка существования бакета
             ensureBucketExists();
 
-            // Проверка типа файла
             String contentType = file.getContentType();
             if (contentType == null || !contentType.equals("text/plain")) {
                 throw new IllegalArgumentException("Файл должен быть типа text/plain (TXT)");
             }
 
-            // Проверка расширения файла
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".txt")) {
                 throw new IllegalArgumentException("Файл должен иметь расширение .txt");
             }
 
-            // Генерация уникального имени файла
             String fileName = generateFileName(originalFilename, "txt");
 
-            // Загрузка файла в MinIO
             try (InputStream inputStream = file.getInputStream()) {
                 minioClient.putObject(
                         PutObjectArgs.builder()
@@ -67,30 +59,22 @@ public class MinioService {
         }
     }
 
-    /**
-     * Загрузка PNG файла в MinIO
-     */
     public String uploadPngFile(MultipartFile file) {
         try {
-            // Проверка существования бакета
             ensureBucketExists();
 
-            // Проверка типа файла
             String contentType = file.getContentType();
             if (contentType == null || !contentType.equals("image/png")) {
                 throw new IllegalArgumentException("Файл должен быть типа image/png (PNG)");
             }
 
-            // Проверка расширения файла
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".png")) {
                 throw new IllegalArgumentException("Файл должен иметь расширение .png");
             }
 
-            // Генерация уникального имени файла
             String fileName = generateFileName(originalFilename, "png");
 
-            // Загрузка файла в MinIO
             try (InputStream inputStream = file.getInputStream()) {
                 minioClient.putObject(
                         PutObjectArgs.builder()
@@ -111,9 +95,42 @@ public class MinioService {
         }
     }
 
-    /**
-     * Проверка и создание бакета, если он не существует
-     */
+    public String uploadJsonFile(MultipartFile file) {
+        try {
+            ensureBucketExists();
+
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.equals("application/json")) {
+                throw new IllegalArgumentException("Файл должен быть типа application/json (JSON)");
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".json")) {
+                throw new IllegalArgumentException("Файл должен иметь расширение .json");
+            }
+
+            String fileName = generateFileName(originalFilename, "json");
+
+            try (InputStream inputStream = file.getInputStream()) {
+                minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(bucketName)
+                                .object(fileName)
+                                .stream(inputStream, file.getSize(), -1)
+                                .contentType(contentType)
+                                .build()
+                );
+            }
+
+            log.info("JSON файл успешно загружен: {}", fileName);
+            return fileName;
+
+        } catch (Exception e) {
+            log.error("Ошибка при загрузке JSON файла", e);
+            throw new RuntimeException("Не удалось загрузить JSON файл: " + e.getMessage(), e);
+        }
+    }
+
     private void ensureBucketExists() {
         try {
             boolean exists = minioClient.bucketExists(
@@ -136,9 +153,6 @@ public class MinioService {
         }
     }
 
-    /**
-     * Генерация уникального имени файла
-     */
     private String generateFileName(String originalFilename, String folder) {
         String uuid = UUID.randomUUID().toString();
         String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
