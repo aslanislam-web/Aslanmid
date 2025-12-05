@@ -1,0 +1,7 @@
+Это тестовый TXT файл для загрузки в MinIO.
+
+Проект: MinIO File Upload Service
+Эндпоинт: POST /api/files/upload/txt
+
+Этот файл можно использовать для тестирования загрузки TXT файлов.
+

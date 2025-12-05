@@ -44,7 +44,7 @@ public class MinioService {
             }
 
             // Генерация уникального имени файла
-            String fileName = generateFileName(originalFilename);
+            String fileName = generateFileName(originalFilename, "txt");
 
             // Загрузка файла в MinIO
             try (InputStream inputStream = file.getInputStream()) {
@@ -64,6 +64,50 @@ public class MinioService {
         } catch (Exception e) {
             log.error("Ошибка при загрузке TXT файла", e);
             throw new RuntimeException("Не удалось загрузить TXT файл: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Загрузка PNG файла в MinIO
+     */
+    public String uploadPngFile(MultipartFile file) {
+        try {
+            // Проверка существования бакета
+            ensureBucketExists();
+
+            // Проверка типа файла
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.equals("image/png")) {
+                throw new IllegalArgumentException("Файл должен быть типа image/png (PNG)");
+            }
+
+            // Проверка расширения файла
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".png")) {
+                throw new IllegalArgumentException("Файл должен иметь расширение .png");
+            }
+
+            // Генерация уникального имени файла
+            String fileName = generateFileName(originalFilename, "png");
+
+            // Загрузка файла в MinIO
+            try (InputStream inputStream = file.getInputStream()) {
+                minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(bucketName)
+                                .object(fileName)
+                                .stream(inputStream, file.getSize(), -1)
+                                .contentType(contentType)
+                                .build()
+                );
+            }
+
+            log.info("PNG файл успешно загружен: {}", fileName);
+            return fileName;
+
+        } catch (Exception e) {
+            log.error("Ошибка при загрузке PNG файла", e);
+            throw new RuntimeException("Не удалось загрузить PNG файл: " + e.getMessage(), e);
         }
     }
 
@@ -95,10 +139,10 @@ public class MinioService {
     /**
      * Генерация уникального имени файла
      */
-    private String generateFileName(String originalFilename) {
+    private String generateFileName(String originalFilename, String folder) {
         String uuid = UUID.randomUUID().toString();
         String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        return "txt/" + uuid + extension;
+        return folder + "/" + uuid + extension;
     }
 }
 
